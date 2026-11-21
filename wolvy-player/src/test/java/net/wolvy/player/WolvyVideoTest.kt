@@ -31,6 +31,15 @@ class WolvyVideoTest {
         assertThrows(IllegalArgumentException::class.java) { WolvyVideo("vid", 1, " ") }
     }
 
+    @Test fun keepsTheProviderFromTheEmbedUrlAndWithToken() {
+        val provider = ViewerTokenProvider { "fresh" }
+        val v = WolvyVideo.fromEmbedUrl("https://embed.wolvy.stream/vid1/NDI=?vt=x", provider)
+        val w = v.withToken("y")
+        assertEquals("y", w.viewerToken)
+        assertEquals(provider, w.tokenProvider)
+        assertEquals(v.videoId, w.videoId)
+    }
+
     @Test fun toStringNeverShowsTheToken() {
         assertFalse(WolvyVideo("vid", 7, "secret-token-value").toString().contains("secret"))
     }

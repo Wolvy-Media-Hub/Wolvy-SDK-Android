@@ -12,15 +12,15 @@ import java.net.URLEncoder
 public class PlaybackData(
     /** The playback session. Sent on every media request (X-CDN-Session), and back when asking again. */
     public val sessionId: String?,
-    /** The licence token, valid [licenceTokenTtlSeconds] seconds. */
-    public val licenceToken: String,
+    /** The licence token, valid [licenceTokenTtlSeconds] seconds. Not readable outside the SDK, so it cannot end up in an app's logs. */
+    internal val licenceToken: String,
     public val licenceTokenTtlSeconds: Int,
     /** Where the Widevine licence is requested, with the token. */
-    public val licenceUrl: String,
+    internal val licenceUrl: String,
     /** The media server, e.g. "25001". */
     public val serverId: String,
-    public val cdnToken: String?,
-    public val cdnExpires: Long?,
+    internal val cdnToken: String?,
+    internal val cdnExpires: Long?,
     public val poster: String?,
     public val duration: Double?,
     public val captions: List<CaptionTrack>,
@@ -35,7 +35,7 @@ public class PlaybackData(
     public val appOnly: Boolean,
 ) {
     /** Headers for every request to the CDN. */
-    public val cdnHeaders: Map<String, String>
+    internal val cdnHeaders: Map<String, String>
         get() = buildMap {
             if (!cdnToken.isNullOrEmpty()) {
                 put("X-CDN-Token", cdnToken)
@@ -44,8 +44,8 @@ public class PlaybackData(
             if (!sessionId.isNullOrEmpty()) put("X-CDN-Session", sessionId)
         }
 
-    /** The DASH manifest of [video] on this media server. */
-    public fun manifestUrl(video: WolvyVideo): String {
+    /** The DASH manifest of [video] on this media server (with the CDN token). */
+    internal fun manifestUrl(video: WolvyVideo): String {
         val q = if (!cdnToken.isNullOrEmpty()) "?token=${enc(cdnToken)}&exp=${cdnExpires ?: ""}" else ""
         return "https://$serverId.$CDN_DOMAIN/${video.accountId}/${video.videoId}/dash/manifest.mpd$q"
     }

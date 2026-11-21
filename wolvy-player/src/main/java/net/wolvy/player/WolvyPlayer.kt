@@ -23,9 +23,12 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import net.wolvy.player.internal.Cue
 import net.wolvy.player.internal.ErrorKind
+import net.wolvy.player.internal.PlaybackFetcher
 import net.wolvy.player.internal.ProgressTracker
 import net.wolvy.player.internal.QualityPolicy
 import net.wolvy.player.internal.RecoveryPolicy
+import net.wolvy.player.internal.Scrub
+import net.wolvy.player.internal.ScrubbedCause
 import net.wolvy.player.internal.VttParser
 import net.wolvy.player.internal.WidevineLevel
 import java.net.HttpURLConnection
@@ -69,6 +72,7 @@ public class WolvyPlayer @JvmOverloads constructor(
         Thread(r, "wolvy-player-io").apply { isDaemon = true }
     }
     private val listeners = CopyOnWriteArrayList<WolvyPlayerListener>()
+    private val fetcher = PlaybackFetcher(source)
     private val userAgent = "wolvy-android/${BuildConfig.SDK_VERSION} (Android ${Build.VERSION.RELEASE}; ${app.packageName})"
 
     /** This device's Widevine level: "L1" (hardware), "L2", "L3" (software) or "unknown". */
@@ -193,16 +197,21 @@ public class WolvyPlayer @JvmOverloads constructor(
     private fun fetch(gen: Int, sessionId: String?, then: (PlaybackData) -> Unit) {
         val v = video ?: return
         io.execute {
-            val result: Result<PlaybackData> = try {
-                Result.success(source.fetch(v, sessionId))
+            val result: Result<PlaybackFetcher.Result> = try {
+                Result.success(fetcher.fetch(v, sessionId, System.currentTimeMillis() / 1000))
             } catch (e: WolvyError) {
                 Result.failure(e)
             } catch (e: Exception) {
-                Result.failure(WolvyError(WolvyError.Code.FAILED, e.message ?: "Playback data could not be read.", "source_failed", e))
+                Result.failure(WolvyError(WolvyError.Code.FAILED, "Playback data could not be read.", "source_failed",
+                    ScrubbedCause(Scrub.summary(e))))
             }
             main.post {
                 if (released || gen != generation) return@post
-                result.fold(then) { fail(it as WolvyError) }
+                result.fold({ r ->
+                    // Keep the token that worked (it may be a fresh one) for the next reload.
+                    if (video === v) video = r.video
+                    then(r.data)
+                }) { fail(it as WolvyError) }
             }
         }
     }
@@ -244,7 +253,10 @@ public class WolvyPlayer @JvmOverloads constructor(
     // ---- errors and recovery -------------------------------------------------------------
 
     private fun onPlaybackError(error: PlaybackException) {
-        val d = data ?: return fail(WolvyError(WolvyError.Code.FAILED, "Playback failed.", "playback_failed", error))
+        // The original exception can hold request addresses and headers with tokens: errors that
+        // leave the SDK carry a scrubbed summary instead.
+        val cause = ScrubbedCause("${error.errorCodeName}: ${Scrub.summary(error)}")
+        val d = data ?: return fail(WolvyError(WolvyError.Code.FAILED, "Playback failed.", "playback_failed", cause))
         val causeText = generateSequence(error as Throwable) { it.cause }
             .joinToString(" ") { "${it.javaClass.name} ${it.message ?: ""}" }
         val isDrm = ErrorKind.isDrm(error.errorCode, causeText)
@@ -253,7 +265,7 @@ public class WolvyPlayer @JvmOverloads constructor(
         // App-Only on a software-DRM device: the licence server refuses by design. No retries.
         if (isDrm && d.appOnly && softwareDrm) {
             return fail(WolvyError(WolvyError.Code.DEVICE_NOT_SUPPORTED,
-                "This video needs a device with hardware DRM.", "hardware_drm_required", error))
+                "This video needs a device with hardware DRM.", "hardware_drm_required", cause))
         }
         val fresh = RecoveryPolicy.tokenFresh(tokenIssuedAt, d.licenceTokenTtlSeconds, SystemClock.elapsedRealtime())
         when (recovery.onError(isDrm, fresh)) {
@@ -279,7 +291,7 @@ public class WolvyPlayer @JvmOverloads constructor(
                         ErrorKind.isNetwork(error.errorCode) -> "network"
                         else -> "playback_failed"
                     },
-                    error,
+                    cause,
                 ),
             )
         }

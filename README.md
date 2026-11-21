@@ -27,6 +27,21 @@ player.release()
 
 `WolvyVideo.fromEmbedUrl(embedUrl)` reads the three values from the `embed_url` that `POST /v1/videos/{id}/playback-tokens` returns.
 
+### Short viewer tokens (recommended)
+
+A viewer token is good for any video of your account until it expires, so keep it short (for example 10 minutes) and give the player a way to get a fresh one from your server:
+
+```kotlin
+val video = WolvyVideo(videoId, accountId, tokenFromYourServer) { v ->
+    myApi.fetchViewerToken(v.videoId)          // runs on a background thread; signed on your server
+}
+player.load(video)
+```
+
+The player asks for a fresh token before it talks to Wolvy when the one it has expires within a minute (it reads the expiry from the token; only Wolvy verifies it), and once more if Wolvy refuses the token. Without a provider, the token must outlive the viewing: a reload after an error needs it again.
+
+Tokens never leave the SDK in errors: the viewer, licence and CDN tokens are removed from `WolvyError` messages and causes, and the token fields of `PlaybackData` are not readable from app code. Never log the token you pass in.
+
 Create, call and release the player on the main thread.
 
 ## What it does for you
@@ -50,7 +65,7 @@ The web Player API's names, so the same code ideas work in every Wolvy SDK.
 
 | Methods | Notes |
 |---|---|
-| `load(video, autoplay = true)` | Android only: starts a video |
+| `load(video, autoplay = true)` | Android only: starts a video (`video` may carry a `ViewerTokenProvider`) |
 | `play()`, `pause()` | |
 | `seek(seconds)` | Returns the time jumped to; `not_ready` before the length is known |
 | `mute()`, `unmute()`, `setVolume(0..1)` | |
