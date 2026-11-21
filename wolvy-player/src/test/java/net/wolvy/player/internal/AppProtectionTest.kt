@@ -27,6 +27,15 @@ class AppProtectionTest {
         assertEquals("Rl80GWJjQyTwXmJhaE9N7ZA1A9DuQn3hIt98JEe7z8I", AppSigning.playIntegrityNonce(bound))
     }
 
+    @Test fun base64UrlMatchesTheJdk() {
+        val jdk = java.util.Base64.getUrlEncoder().withoutPadding()
+        for (n in 0..40) {
+            val bytes = ByteArray(n) { (it * 37 + n * 11).toByte() }
+            assertEquals("length $n", jdk.encodeToString(bytes), AppSigning.b64url(bytes))
+        }
+        assertEquals("_-8", AppSigning.b64url(byteArrayOf(0xff.toByte(), 0xef.toByte())))
+    }
+
     @Test fun signaturesMatchTheServer() {
         // php: hash_hmac('sha256', 'vidA1:29:1795288000', $key)
         assertEquals("72670584018c58a96a37b00480d2717ffedfba4990a623617fcf28276c20e573",
