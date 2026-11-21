@@ -31,9 +31,22 @@ public class PlaybackData(
     /** The verified viewer id from the token, for the watermark. */
     public val viewerId: String?,
     public val watermark: WatermarkConfig,
-    /** App-Only is on for the account: a software-DRM device gets no keys. */
+    /** App-Only is on for the account: a software-DRM device gets no keys (unless [attested]). */
     public val appOnly: Boolean,
+    /**
+     * The app proved itself to Wolvy (app protection): it is treated like Wolvy Player, and its
+     * licence requests carry [licenceHeaders].
+     */
+    public val attested: Boolean = false,
+    /** Sent with every licence request of a proven app: the licence signature made with its app key. */
+    internal val licenceHeaders: Map<String, String> = emptyMap(),
 ) {
+    /** The same data with the licence signature of a proven app. */
+    internal fun withLicenceHeaders(headers: Map<String, String>): PlaybackData = PlaybackData(
+        sessionId, licenceToken, licenceTokenTtlSeconds, licenceUrl, serverId, cdnToken, cdnExpires, poster,
+        duration, captions, chapters, moments, playerColor, viewerId, watermark, appOnly, attested, headers,
+    )
+
     /** Headers for every request to the CDN. */
     internal val cdnHeaders: Map<String, String>
         get() = buildMap {
@@ -104,6 +117,7 @@ public class PlaybackData(
                     opacity = (wm?.optInt("opacity", 40) ?: 40).coerceIn(0, 100),
                 ),
                 appOnly = json.optBoolean("app_only_l3"),
+                attested = json.optBoolean("attested"),
             )
         }
 

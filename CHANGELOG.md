@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- **App protection.** When the account sets up protection for the app (dashboard: Settings → Protection → Allowed apps → Protection), the app proves it is genuine before playback with the customer's own Google Play Integrity (a Classic request under the project linked in the app's Play Console). Wolvy answers a 6-hour app key, and the SDK signs `app_render_video` and every licence request with it. A proven app is treated like Wolvy Player: with App-Only on it plays on phones with software DRM too. Wolvy's checks are Wolvy Player's: installed from Google Play, no rooted phone, emulator or unlocked bootloader, and the signing certificate the customer listed.
+- Without the setup, or when the proof fails (no Google Play services, a refusal), the app plays unproven, as in 0.1.0, unless the account only allows proven apps. New error reasons: `attestation_required`, `device_compromised` (code `device_not_supported`), `app_not_genuine`, `attestation_failed`.
+- `State.attested` and `PlaybackData.attested`; `AppRenderVideoSource(context, sdk, apiBase)` for wrappers (the `String` constructor does not prove the app).
+- Depends on `com.google.android.play:integrity` 1.5.0.
+
 ## 0.1.0
 
 First release of `net.wolvy:wolvy-player`.

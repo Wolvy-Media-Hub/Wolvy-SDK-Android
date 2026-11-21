@@ -8,6 +8,8 @@ public data class State(
     val muted: Boolean,
     val volume: Float,
     val playbackRate: Float,
+    /** The app proved itself to Wolvy for this video (app protection): it plays like Wolvy Player. */
+    val attested: Boolean = false,
 )
 
 /**

@@ -69,7 +69,8 @@ class MainActivity : AppCompatActivity() {
 
         line("Widevine ${player.widevineLevel}, app id $packageName (must be on the account's Allowed apps)")
         player.addListener(object : WolvyPlayerListener {
-            override fun onReady(state: State) = line("ready, ${"%.0f".format(state.duration)} s")
+            override fun onReady(state: State) =
+                line("ready, ${"%.0f".format(state.duration)} s, ${if (state.attested) "app proven (app protection)" else "app not proven"}")
             override fun onPlay(currentTime: Double) = line("play at ${"%.1f".format(currentTime)}")
             override fun onPause(currentTime: Double) = line("pause at ${"%.1f".format(currentTime)}")
             override fun onEnded() = line("ended")

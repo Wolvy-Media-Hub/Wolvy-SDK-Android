@@ -8,7 +8,11 @@ package net.wolvy.player
  * dashboard: Settings → Protection → Allowed apps), `viewer_token_required` (missing, expired or
  * wrongly signed token), `update_required` (this SDK version is too old), `video_not_found`,
  * `video_not_ready`, `multi_drm_required`, `ip_not_allowed`, `country_not_allowed`,
- * `viewer_link_locked`, `rate_limited`, `not_available`. Reasons from the device:
+ * `viewer_link_locked`, `rate_limited`, `not_available`; with app protection, `attestation_required`
+ * (the account only allows apps that prove themselves, and this one could not), and the reasons of
+ * Wolvy's refusal of the app's proof: `device_compromised` (rooted phone, emulator, unlocked
+ * bootloader; code [Code.DEVICE_NOT_SUPPORTED]), `app_not_genuine` (not the app as published on
+ * Google Play), `attestation_failed`. Reasons from the device:
  * `screen_protection_unavailable`, `no_secure_quality`, `hardware_drm_required`, `licence_refused`,
  * `playback_failed`, `network`.
  */

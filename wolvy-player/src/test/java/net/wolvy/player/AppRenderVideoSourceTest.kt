@@ -1,5 +1,9 @@
 package net.wolvy.player
 
+import net.wolvy.player.internal.AppAttestor
+import net.wolvy.player.internal.AppSigning
+import net.wolvy.player.internal.WolvyHttp
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -108,6 +112,43 @@ class AppRenderVideoSourceTest {
         val e = assertThrows(WolvyError::class.java) { source().fetch(video, null) }
         assertEquals(WolvyError.Code.NETWORK_ERROR, e.code)
         assertEquals("http_502", e.reason)
+    }
+
+    /** A source whose attestor proves the app at once (its two calls are faked; the render goes to the local server). */
+    private fun provenSource(): AppRenderVideoSource {
+        val challenge = "c".repeat(64)
+        val attestor = AppAttestor(
+            "com.example.app", "wolvy-android/9.9.9", "http://unused/api",
+            tokens = { "tok" },
+            post = { url, _, _ ->
+                WolvyHttp.Answer(200, JSONObject(
+                    if (url.endsWith("app_challenge")) """{"status":"success","method":"play_integrity","challenge":"$challenge"}"""
+                    else """{"status":"success","key_id":"3.1795309600.${"d".repeat(32)}","key":"appkey","expires_at":1795309600}""",
+                ))
+            },
+            clock = { 1_795_288_000L },
+        )
+        return AppRenderVideoSource("com.example.app", "wolvy-android/9.9.9", "http://127.0.0.1:$port/api", attestor) { 1_795_288_000L }
+    }
+
+    @Test fun aProvenAppSignsTheRequestAndTheLicence() {
+        body = """{"status":"success","token":"lic.tok.en","server_id":"25001","session_id":"s1","attested":true}"""
+        val d = provenSource().fetch(video, null)
+        assertEquals("3.1795309600.${"d".repeat(32)}", seenHeaders["X-Wolvy-App-Key-Id"])
+        assertEquals("1795288000", seenHeaders["X-Wolvy-App-Timestamp"])
+        assertEquals(AppSigning.renderSignature("appkey", "vid_1", 42, 1_795_288_000L), seenHeaders["X-Wolvy-App-Signature"])
+        assertEquals(true, d.attested)
+        assertEquals(mapOf(
+            "X-Wolvy-Licence-Timestamp" to "1795288000",
+            "X-Wolvy-Licence-Signature" to AppSigning.licenceSignature("appkey", "lic.tok.en", 1_795_288_000L),
+        ), d.licenceHeaders)
+    }
+
+    @Test fun anUnprovenAnswerGetsNoLicenceSignature() {
+        body = """{"status":"success","token":"t","server_id":"25001","attested":false}"""
+        val d = provenSource().fetch(video, null)
+        assertEquals(false, d.attested)
+        assertEquals(emptyMap<String, String>(), d.licenceHeaders)
     }
 
     @Test fun noServerIsANetworkError() {
