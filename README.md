@@ -1,12 +1,22 @@
 # Wolvy Android SDK
 
-**In development (0.1.0). Not published yet.** The Flutter and React Native SDKs are built on it.
+**0.1.0, ready for Maven Central (not released yet).** The Flutter and React Native SDKs are built on it.
 
 Plays Wolvy's DRM-protected video (DASH and Widevine, through Media3) in your own Android app, with the viewer watermark, screen-capture protection and the account's quality rules, and with the same methods and events as Wolvy's web Player API.
 
 - Android 7.0 (API 24) and later.
 - Your app's package name must be on your account's **Allowed apps** (Wolvy dashboard → Settings → Protection). An empty list lets no app play.
 - The viewer token is made on **your server**: `POST /v1/videos/{id}/playback-tokens` on the Developer API, or `signViewerToken` in the [PHP](https://github.com/Wolvy-Media-Hub/Wolvy-SDK-PHP) and [Node.js](https://github.com/Wolvy-Media-Hub/Wolvy-SDK-Node) SDKs. Nothing secret goes into the app.
+
+## Install
+
+Once released on Maven Central (not yet):
+
+```kotlin
+dependencies {
+    implementation("net.wolvy:wolvy-player:0.1.0")
+}
+```
 
 ## Use
 

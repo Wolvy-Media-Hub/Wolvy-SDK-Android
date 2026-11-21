@@ -1,0 +1,38 @@
+name: Release to Maven Central
+
+# Push a tag like v0.1.0 (the same version as wolvy.sdkVersion in gradle.properties). The workflow
+# tests, builds, signs and uploads net.wolvy:wolvy-player to the Central Portal; then press
+# "Publish" on https://central.sonatype.com/publishing/deployments (the first releases are checked
+# by hand: automaticRelease = false in wolvy-player/build.gradle.kts).
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: maven-central
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Android SDK 36
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: The tag matches the version
+        run: |
+          v=$(grep '^wolvy.sdkVersion=' gradle.properties | cut -d= -f2)
+          test "v$v" = "$GITHUB_REF_NAME" || { echo "Tag $GITHUB_REF_NAME, version $v"; exit 1; }
+      - name: Unit tests and lint
+        run: ./gradlew --no-daemon :wolvy-player:testDebugUnitTest :wolvy-player:lintDebug
+      - name: Sign and upload to the Central Portal
+        run: ./gradlew --no-daemon :wolvy-player:publishToMavenCentral
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
