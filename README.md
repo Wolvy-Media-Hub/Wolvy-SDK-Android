@@ -1,6 +1,6 @@
 # Wolvy Android SDK
 
-**0.1.0, ready for Maven Central (not released yet).** The Flutter and React Native SDKs are built on it.
+**0.1.0** on [Maven Central](https://central.sonatype.com/artifact/net.wolvy/wolvy-player). The [Flutter](https://github.com/Wolvy-Media-Hub/Wolvy-SDK-Flutter) and [React Native](https://github.com/Wolvy-Media-Hub/Wolvy-SDK-React-Native) SDKs are built on it.
 
 Plays Wolvy's DRM-protected video (DASH and Widevine, through Media3) in your own Android app, with the viewer watermark, screen-capture protection and the account's quality rules, and with the same methods and events as Wolvy's web Player API.
 
@@ -10,7 +10,7 @@ Plays Wolvy's DRM-protected video (DASH and Widevine, through Media3) in your ow
 
 ## Install
 
-Once released on Maven Central (not yet):
+From Maven Central (`mavenCentral()` and `google()` in your repositories, as in a new Android project):
 
 ```kotlin
 dependencies {
