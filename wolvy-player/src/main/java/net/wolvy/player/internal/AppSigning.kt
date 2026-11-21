@@ -1,6 +1,5 @@
 package net.wolvy.player.internal
 
-import android.util.Base64
 import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -37,14 +36,25 @@ internal object AppSigning {
 
     fun hex(bytes: ByteArray): String = bytes.joinToString("") { "%02x".format(it) }
 
+    private const val B64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
     /**
-     * Base64url without padding. java.util.Base64 is used where it exists (API 26+, and the JVM of
-     * the unit tests); android.util.Base64 below that.
+     * Base64url without padding (RFC 4648 §5). Written out because java.util.Base64 needs API 26
+     * (the SDK's minimum is 24) and android.util.Base64 does nothing in JVM unit tests.
      */
-    fun b64url(bytes: ByteArray): String =
-        try {
-            java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
-        } catch (e: NoClassDefFoundError) {
-            Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+    fun b64url(bytes: ByteArray): String {
+        val out = StringBuilder((bytes.size + 2) / 3 * 4)
+        var i = 0
+        while (i < bytes.size) {
+            val b0 = bytes[i].toInt() and 0xff
+            val b1 = if (i + 1 < bytes.size) bytes[i + 1].toInt() and 0xff else -1
+            val b2 = if (i + 2 < bytes.size) bytes[i + 2].toInt() and 0xff else -1
+            out.append(B64URL[b0 shr 2])
+            out.append(B64URL[((b0 and 0x03) shl 4) or (if (b1 < 0) 0 else b1 shr 4)])
+            if (b1 >= 0) out.append(B64URL[((b1 and 0x0f) shl 2) or (if (b2 < 0) 0 else b2 shr 6)])
+            if (b2 >= 0) out.append(B64URL[b2 and 0x3f])
+            i += 3
         }
+        return out.toString()
+    }
 }
