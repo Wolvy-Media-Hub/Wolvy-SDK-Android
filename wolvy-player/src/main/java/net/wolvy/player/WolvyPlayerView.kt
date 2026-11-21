@@ -171,7 +171,7 @@ public class WolvyPlayerView @JvmOverloads constructor(
     }
 
     private fun detach(p: WolvyPlayer) {
-        p.setProtectionConfirmed(false)
+        p.setProtection(this, false)
         p.removeListener(events)
         p.exo.removeListener(videoSizes)
         exoView.player = null
@@ -186,7 +186,7 @@ public class WolvyPlayerView @JvmOverloads constructor(
     }
 
     override fun onDetachedFromWindow() {
-        player?.setProtectionConfirmed(false)
+        player?.setProtection(this, false)
         guard.disable()
         protectedWindow = false
         main.removeCallbacks(moveWatermark)
@@ -196,7 +196,7 @@ public class WolvyPlayerView @JvmOverloads constructor(
     private fun protect(p: WolvyPlayer) {
         protectedWindow = guard.enable()
         if (protectedWindow) {
-            p.setProtectionConfirmed(true)
+            p.setProtection(this, true)
         } else {
             p.failFromView(WolvyError(WolvyError.Code.PLAYBACK_ERROR,
                 "Screen protection could not be turned on, so the video does not play.",

@@ -104,7 +104,10 @@ public class WolvyPlayer @JvmOverloads constructor(
     private var fatal: WolvyError? = null
     private var released = false
     private var wantPlay = false
-    private var protectionConfirmed = false
+    // The view that confirmed screen protection and shows this player. A player can move to
+    // another view (a new view in a new layout); only the view that holds it can withdraw it.
+    private var protector: Any? = null
+    private val protectionConfirmed: Boolean get() = protector != null
     private var userVolume = 1f
     private var muted = false
     private var captionLanguage: String? = null
@@ -519,10 +522,15 @@ public class WolvyPlayer @JvmOverloads constructor(
 
     // ---- for WolvyPlayerView -----------------------------------------------------------------
 
-    /** Set by the view once FLAG_SECURE is confirmed on its window; nothing plays before. */
-    internal fun setProtectionConfirmed(confirmed: Boolean) {
-        protectionConfirmed = confirmed
-        if (!released) exo.playWhenReady = wantPlay && confirmed && fatal == null
+    /**
+     * Set by a view once FLAG_SECURE is confirmed on its window; nothing plays before. The last
+     * view to confirm holds the player; another view letting go does not stop it.
+     */
+    internal fun setProtection(view: Any, confirmed: Boolean) {
+        if (confirmed) protector = view
+        else if (protector === view) protector = null
+        else return
+        if (!released) exo.playWhenReady = wantPlay && protectionConfirmed && fatal == null
     }
 
     internal fun failFromView(e: WolvyError) = fail(e)
