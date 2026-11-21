@@ -69,6 +69,15 @@ Create, call and release the player on the main thread.
 | Look | The account's player colour; quality, captions and speed in a menu. `playerView.showControls = false` for a bare view with your own controls |
 | Fullscreen | The button reports `onFullscreenChange(true/false)`; your activity resizes the view (the sample shows how) |
 
+## App protection
+
+Set it up once per app in the dashboard (Settings → Protection → Allowed apps → Protection):
+1. paste the SHA-256 of the app signing key from Play Console;
+2. upload Wolvy's key in Play Console (Play Integrity API → Classic requests → Response encryption → "Manage and download my response encryption keys");
+3. upload the `.enc` file Play Console gives back.
+
+There's nothing to code. The SDK then proves the app before playback with Google Play Integrity, under your own Play Console project and quota. A proven app plays like Wolvy Player: with App-Only on, also on phones without hardware DRM. Only your app as installed from Google Play is proven; sideloaded or modified copies, rooted phones and emulators are refused. Without the setup, or when the proof fails, the app plays as before, under browser rules, unless you turn on "Only allow apps that prove they are genuine". `State.attested` tells you which applies.
+
 ## API
 
 The web Player API's names, so the same code ideas work in every Wolvy SDK.

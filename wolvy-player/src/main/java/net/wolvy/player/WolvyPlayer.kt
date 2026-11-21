@@ -234,7 +234,13 @@ public class WolvyPlayer @JvmOverloads constructor(
         val item = MediaItem.Builder()
             .setUri(d.manifestUrl(v))
             .setMimeType(MimeTypes.APPLICATION_MPD)
-            .setDrmConfiguration(MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(d.licenceUrl).build())
+            .setDrmConfiguration(
+                MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
+                    .setLicenseUri(d.licenceUrl)
+                    // A proven app signs its licence requests; the signature lasts as long as the licence token.
+                    .setLicenseRequestHeaders(d.licenceHeaders)
+                    .build(),
+            )
             .build()
         exo.setMediaItem(item, startMs)
         exo.prepare()
@@ -493,7 +499,7 @@ public class WolvyPlayer @JvmOverloads constructor(
     public val volume: Float get() = userVolume
     public val playbackRate: Float get() = exo.playbackParameters.speed
 
-    public fun getState(): State = State(currentTime, duration, paused, muted, userVolume, playbackRate)
+    public fun getState(): State = State(currentTime, duration, paused, muted, userVolume, playbackRate, data?.attested == true)
 
     public fun getQualities(): Qualities =
         Qualities(quality.available, quality.selected, exo.videoFormat?.height?.takeIf { it > 0 })

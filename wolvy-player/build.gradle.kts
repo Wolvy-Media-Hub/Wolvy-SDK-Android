@@ -32,6 +32,9 @@ dependencies {
     api("androidx.media3:media3-exoplayer:$media3")
     implementation("androidx.media3:media3-exoplayer-dash:$media3")
     implementation("androidx.media3:media3-ui:$media3")
+    // App protection (phase 5): Classic Play Integrity tokens under the customer's own linked
+    // Cloud project. Without Google Play services the app simply plays unproven.
+    implementation("com.google.android.play:integrity:1.5.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20260814")
 }
