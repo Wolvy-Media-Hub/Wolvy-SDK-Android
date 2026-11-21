@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
         playerView.player = player
         root.addView(playerView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
-        log = TextView(this).apply { textSize = 11f; setPadding(16, 8, 16, 8) }
+        log = TextView(this).apply { textSize = 11f; setPadding(16, 8, 16, 8); setTextIsSelectable(true) }
         logScroll = ScrollView(this).apply { addView(log) }
         root.addView(logScroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 0.6f))
         setContentView(root)
